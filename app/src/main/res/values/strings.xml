@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">Supply Oscillator</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">홈</string>
+    <string name="nav_chart">차트 분석</string>
+    <string name="nav_analysis">수급 분석</string>
+    <string name="nav_settings">설정</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">수급 오실레이터</string>
+    <string name="home_subtitle">주식 시가총액과 투자자 수급을 분석합니다</string>
+    <string name="feature_chart_title">차트 분석</string>
+    <string name="feature_chart_desc">시가총액과 수급 오실레이터 차트를 확인하세요</string>
+    <string name="feature_analysis_title">수급 분석</string>
+    <string name="feature_analysis_desc">외국인과 기관의 매매 동향을 분석합니다</string>
+
+    <!-- Chart Screen -->
+    <string name="chart_search_title">종목 검색</string>
+    <string name="chart_input_label">종목명 또는 코드</string>
+    <string name="chart_input_placeholder">예: 삼성전자, 005930</string>
+    <string name="chart_button_search">차트 분석</string>
+    <string name="chart_button_loading">분석 중…</string>
+    <string name="chart_empty_message">종목을 검색하면 차트가 표시됩니다</string>
+
+    <!-- Analysis Screen -->
+    <string name="analysis_title">수급 분석</string>
+    <string name="analysis_investor_title">투자자별 수급 현황</string>
+    <string name="analysis_metrics_title">분석 지표</string>
+
+    <!-- Settings Screen -->
+    <string name="settings_title">설정</string>
+    <string name="settings_theme_title">테마</string>
+    <string name="settings_notification_title">알림</string>
+    <string name="settings_app_info_title">앱 정보</string>
+    <string name="settings_dynamic_color">동적 색상</string>
+    <string name="settings_dynamic_color_desc">시스템 배경화면에 맞춰 색상 변경 (Android 12+)</string>
+    <string name="settings_dark_mode">다크 모드</string>
+    <string name="settings_dark_mode_desc">어두운 테마 사용</string>
+    <string name="settings_notification">알림 받기</string>
+    <string name="settings_notification_desc">수급 변동 알림</string>
+    <string name="settings_version">버전</string>
+    <string name="settings_design">디자인</string>
+    <string name="settings_framework">프레임워크</string>
+    <string name="settings_licenses">오픈소스 라이선스</string>
+
+    <!-- Common -->
+    <string name="menu">메뉴</string>
+    <string name="phase2_notice">실제 데이터는 Phase 2에서 연동됩니다</string>
+</resources>
