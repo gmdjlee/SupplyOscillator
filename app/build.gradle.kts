@@ -84,6 +84,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    // CardView for marker layouts
+    implementation("androidx.cardview:cardview:1.0.0")
+
     // Charts
     implementation(libs.mpandroidchart)
 

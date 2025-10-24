@@ -11,7 +11,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * 주식 데이터 저장소
+ * 주식 데이터 저장소 (자동완성 기능 추가)
  */
 class StockRepository(private val context: Context) {
 
@@ -21,6 +21,9 @@ class StockRepository(private val context: Context) {
         }
         Python.getInstance()
     }
+
+    // 전체 종목 리스트 캐시
+    private var allStocksCache: List<Pair<String, String>>? = null
 
     /**
      * 종목 검색
@@ -44,6 +47,63 @@ class StockRepository(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
             null
+        }
+    }
+
+    /**
+     * 종목 자동완성 검색
+     *
+     * @param query 검색어
+     * @return 매칭되는 종목 리스트 (최대 20개)
+     */
+    suspend fun searchStocksForAutocomplete(query: String): List<Pair<String, String>> =
+        withContext(Dispatchers.IO) {
+            try {
+                if (query.isEmpty()) return@withContext emptyList()
+
+                // 전체 종목 리스트 가져오기 (캐시 사용)
+                val allStocks = getAllStocks()
+
+                // 쿼리로 필터링
+                val filtered = allStocks.filter { (ticker, name) ->
+                    name.contains(query, ignoreCase = true) ||
+                            ticker.contains(query, ignoreCase = true)
+                }.take(20)
+
+                filtered
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyList()
+            }
+        }
+
+    /**
+     * 전체 종목 리스트 가져오기 (캐시됨)
+     */
+    suspend fun getAllStocks(): List<Pair<String, String>> = withContext(Dispatchers.IO) {
+        try {
+            // 캐시가 있으면 반환
+            allStocksCache?.let { return@withContext it }
+
+            val module = python.getModule("stock_analyzer")
+            val result = module.callAttr("get_all_stocks_list").toString()
+
+            val json = JSONArray(result)
+            val stocks = mutableListOf<Pair<String, String>>()
+
+            for (i in 0 until json.length()) {
+                val item = json.getJSONObject(i)
+                val ticker = item.getString("ticker")
+                val name = item.getString("name")
+                stocks.add(Pair(ticker, name))
+            }
+
+            // 캐시 저장
+            allStocksCache = stocks
+            stocks
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 

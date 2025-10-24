@@ -17,36 +17,80 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
+/**
+ * 다크 테마 색상 스킴 (민트 그린 톤)
+ */
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-    background = Color(0xFF1C1B1F),
-    surface = Color(0xFF1C1B1F),
-    onPrimary = Color(0xFF1C1B1F),
-    onSecondary = Color(0xFF1C1B1F),
-    onTertiary = Color(0xFF1C1B1F),
-    onBackground = Color(0xFFE6E1E5),
-    onSurface = Color(0xFFE6E1E5)
+    primary = DarkMintGreen60,
+    onPrimary = Color(0xFF003300),
+    primaryContainer = DarkMintGreen30,
+    onPrimaryContainer = DarkMintGreen80,
+
+    secondary = TealAccent60,
+    onSecondary = Color(0xFF003D33),
+    secondaryContainer = TealAccent40,
+    onSecondaryContainer = TealAccent80,
+
+    tertiary = MintGreen50,
+    onTertiary = Color(0xFF002200),
+    tertiaryContainer = MintGreen30,
+    onTertiaryContainer = MintGreen80,
+
+    error = ErrorRed40,
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = ErrorRed80,
+
+    background = BackgroundDark,
+    onBackground = Color(0xFFE6E6E6),
+    surface = SurfaceDark,
+    onSurface = Color(0xFFE6E6E6),
+    surfaceVariant = Color(0xFF3D3D3D),
+    onSurfaceVariant = Color(0xFFC8C8C8),
+
+    outline = NeutralGray60,
+    outlineVariant = NeutralGray80
 )
 
+/**
+ * 라이트 테마 색상 스킴 (민트 그린 톤)
+ */
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = MintGreen60,
     onPrimary = Color.White,
+    primaryContainer = MintGreen10,
+    onPrimaryContainer = MintGreen90,
+
+    secondary = TealAccent60,
     onSecondary = Color.White,
+    secondaryContainer = TealAccent10,
+    onSecondaryContainer = TealAccent80,
+
+    tertiary = MintGreen50,
     onTertiary = Color.White,
+    tertiaryContainer = MintGreen20,
+    onTertiaryContainer = MintGreen80,
+
+    error = ErrorRed40,
+    onError = Color.White,
+    errorContainer = ErrorRed80,
+    onErrorContainer = Color(0xFF410002),
+
+    background = BackgroundLight,
     onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F)
+    surface = SurfaceLight,
+    onSurface = Color(0xFF1C1B1F),
+    surfaceVariant = NeutralGray10,
+    onSurfaceVariant = NeutralGray80,
+
+    outline = NeutralGray60,
+    outlineVariant = NeutralGray30
 )
 
 @Composable
 fun StockOscillatorTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // 민트 톤을 유지하기 위해 기본값을 false로 변경
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -79,6 +123,7 @@ fun StockOscillatorTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }

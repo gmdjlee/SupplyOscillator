@@ -17,6 +17,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stockoscillator.data.model.UiState
 import com.stockoscillator.ui.components.MarketDepositChart
+import com.stockoscillator.ui.components.SearchHistoryCard
+import com.stockoscillator.ui.components.StockSearchTextField
 import com.stockoscillator.ui.viewmodel.AnalysisViewModel
 import com.stockoscillator.ui.viewmodel.InvestorData
 
@@ -36,6 +38,10 @@ fun AnalysisScreen() {
     val marketUiState by viewModel.marketUiState.collectAsState()
     val marketAnalysis by viewModel.marketAnalysis.collectAsState()
     val stockInfo by viewModel.stockInfo.collectAsState()
+    val latestInvestorDataDate by viewModel.latestInvestorDataDate.collectAsState()
+    val latestMarketDataDate by viewModel.latestMarketDataDate.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState()
+    val autocompleteSuggestions by viewModel.autocompleteSuggestions.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(0) }
@@ -67,10 +73,30 @@ fun AnalysisScreen() {
                 // 종목별 투자자 수급
                 InvestorAnalysisTab(
                     searchQuery = searchQuery,
-                    onQueryChange = { searchQuery = it },
+                    onQueryChange = { newQuery ->
+                        searchQuery = newQuery
+                        viewModel.searchAutocomplete(newQuery)
+                    },
+                    suggestions = autocompleteSuggestions,
+                    onSuggestionClick = { ticker, name ->
+                        searchQuery = name
+                        viewModel.analyzeInvestors(name)
+                    },
                     onSearch = { viewModel.analyzeInvestors(searchQuery) },
                     uiState = investorUiState,
-                    stockInfo = stockInfo
+                    stockInfo = stockInfo,
+                    latestDataDate = latestInvestorDataDate,
+                    searchHistory = searchHistory,
+                    onHistoryItemClick = { ticker, name ->
+                        searchQuery = name
+                        viewModel.selectFromHistory(ticker, name)
+                    },
+                    onHistoryItemDelete = { ticker ->
+                        viewModel.removeSearchHistory(ticker)
+                    },
+                    onClearAllHistory = {
+                        viewModel.clearAllHistory()
+                    }
                 )
             }
             1 -> {
@@ -78,7 +104,8 @@ fun AnalysisScreen() {
                 MarketAnalysisTab(
                     onAnalyze = { viewModel.analyzeMarket() },
                     uiState = marketUiState,
-                    analysis = marketAnalysis
+                    analysis = marketAnalysis,
+                    latestDataDate = latestMarketDataDate
                 )
             }
         }
@@ -89,15 +116,24 @@ fun AnalysisScreen() {
 private fun InvestorAnalysisTab(
     searchQuery: String,
     onQueryChange: (String) -> Unit,
+    suggestions: List<Pair<String, String>>,
+    onSuggestionClick: (String, String) -> Unit,
     onSearch: () -> Unit,
     uiState: UiState<List<InvestorData>>,
-    stockInfo: Pair<String, String>?
+    stockInfo: Pair<String, String>?,
+    latestDataDate: String?,
+    searchHistory: List<com.stockoscillator.data.repository.SearchHistoryItem>,
+    onHistoryItemClick: (String, String) -> Unit,
+    onHistoryItemDelete: (String) -> Unit,
+    onClearAllHistory: () -> Unit
 ) {
     Column {
         // 검색 섹션
         SearchCard(
             query = searchQuery,
             onQueryChange = onQueryChange,
+            suggestions = suggestions,
+            onSuggestionClick = onSuggestionClick,
             onSearch = onSearch,
             isLoading = uiState is UiState.Loading,
             label = "종목명 입력",
@@ -106,9 +142,27 @@ private fun InvestorAnalysisTab(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 검색 기록
+        if (uiState is UiState.Idle && searchHistory.isNotEmpty()) {
+            SearchHistoryCard(
+                history = searchHistory,
+                onItemClick = onHistoryItemClick,
+                onItemDelete = onHistoryItemDelete,
+                onClearAll = onClearAllHistory
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         when (val state = uiState) {
             is UiState.Idle -> {
-                InfoCard("종목명을 입력하고 '수급 분석' 버튼을 눌러주세요")
+                InfoCard(
+                    if (searchHistory.isNotEmpty()) {
+                        "종목명을 입력하거나 최근 검색에서 선택하세요"
+                    } else {
+                        "종목명을 입력하고 '수급 분석' 버튼을 눌러주세요"
+                    }
+                )
             }
 
             is UiState.Loading -> {
@@ -121,7 +175,7 @@ private fun InvestorAnalysisTab(
 
             is UiState.Success -> {
                 stockInfo?.let { (ticker, name) ->
-                    StockInfoCard(ticker, name)
+                    StockInfoCard(ticker, name, latestDataDate)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
@@ -138,7 +192,8 @@ private fun InvestorAnalysisTab(
 private fun MarketAnalysisTab(
     onAnalyze: () -> Unit,
     uiState: UiState<com.stockoscillator.data.model.MarketDepositData>,
-    analysis: String
+    analysis: String,
+    latestDataDate: String?
 ) {
     Column {
         // 분석 버튼
@@ -173,7 +228,10 @@ private fun MarketAnalysisTab(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                MarketDepositChart(data = state.data)
+                MarketDepositChart(
+                    data = state.data,
+                    latestDate = latestDataDate
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -189,6 +247,8 @@ private fun MarketAnalysisTab(
 private fun SearchCard(
     query: String,
     onQueryChange: (String) -> Unit,
+    suggestions: List<Pair<String, String>>,
+    onSuggestionClick: (String, String) -> Unit,
     onSearch: () -> Unit,
     isLoading: Boolean,
     label: String,
@@ -201,14 +261,15 @@ private fun SearchCard(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                label = { Text(label) },
-                placeholder = { Text("예: 삼성전자") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
+            StockSearchTextField(
+                query = query,
+                onQueryChange = onQueryChange,
+                suggestions = suggestions,
+                onSuggestionClick = onSuggestionClick,
+                onSearch = onSearch,
+                enabled = !isLoading,
+                label = label,
+                placeholder = "예: 삼성전자"
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -227,7 +288,7 @@ private fun SearchCard(
 }
 
 @Composable
-private fun StockInfoCard(ticker: String, name: String) {
+private fun StockInfoCard(ticker: String, name: String, latestDate: String?) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -245,6 +306,14 @@ private fun StockInfoCard(ticker: String, name: String) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
             )
+            latestDate?.let {
+                Text(
+                    text = "최신 데이터: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
     }
 }

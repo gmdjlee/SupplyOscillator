@@ -7,7 +7,10 @@ import com.stockoscillator.data.calculator.OscillatorCalculator
 import com.stockoscillator.data.model.MarketDepositData
 import com.stockoscillator.data.model.StockData
 import com.stockoscillator.data.model.UiState
+import com.stockoscillator.data.repository.SearchHistoryRepository
 import com.stockoscillator.data.repository.StockRepository
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,11 +27,12 @@ data class InvestorData(
 )
 
 /**
- * 수급 분석 ViewModel
+ * 수급 분석 ViewModel (검색 기록 + 자동완성 + 날짜 표시)
  */
 class AnalysisViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = StockRepository(application.applicationContext)
+    private val historyRepository = SearchHistoryRepository(application.applicationContext)
 
     // 종목별 투자자 수급 분석 상태
     private val _investorUiState = MutableStateFlow<UiState<List<InvestorData>>>(UiState.Idle)
@@ -46,6 +50,43 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
     private val _stockInfo = MutableStateFlow<Pair<String, String>?>(null)
     val stockInfo: StateFlow<Pair<String, String>?> = _stockInfo.asStateFlow()
 
+    // 최신 데이터 날짜 (종목별)
+    private val _latestInvestorDataDate = MutableStateFlow<String?>(null)
+    val latestInvestorDataDate: StateFlow<String?> = _latestInvestorDataDate.asStateFlow()
+
+    // 최신 데이터 날짜 (증시)
+    private val _latestMarketDataDate = MutableStateFlow<String?>(null)
+    val latestMarketDataDate: StateFlow<String?> = _latestMarketDataDate.asStateFlow()
+
+    // 검색 기록
+    val searchHistory = historyRepository.searchHistory
+
+    // 자동완성 제안
+    private val _autocompleteSuggestions = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+    val autocompleteSuggestions: StateFlow<List<Pair<String, String>>> = _autocompleteSuggestions.asStateFlow()
+
+    private var autocompleteJob: Job? = null
+
+    /**
+     * 자동완성 검색
+     */
+    fun searchAutocomplete(query: String) {
+        // 이전 작업 취소
+        autocompleteJob?.cancel()
+
+        if (query.isEmpty()) {
+            _autocompleteSuggestions.value = emptyList()
+            return
+        }
+
+        // 디바운싱: 300ms 후에 검색
+        autocompleteJob = viewModelScope.launch {
+            delay(300)
+            val suggestions = repository.searchStocksForAutocomplete(query)
+            _autocompleteSuggestions.value = suggestions
+        }
+    }
+
     /**
      * 종목의 투자자별 수급 분석
      */
@@ -55,10 +96,14 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
+        // 자동완성 제안 초기화
+        _autocompleteSuggestions.value = emptyList()
+
         viewModelScope.launch {
             try {
                 _investorUiState.value = UiState.Loading
                 _stockInfo.value = null
+                _latestInvestorDataDate.value = null
 
                 // 1. 종목 검색
                 val stockInfo = repository.searchStock(query)
@@ -68,6 +113,9 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 }
 
                 _stockInfo.value = stockInfo
+
+                // 검색 기록 추가
+                historyRepository.addSearchHistory(stockInfo.first, stockInfo.second)
 
                 // 2. 데이터 수집
                 val stockData = repository.getStockData(stockInfo.first, days)
@@ -80,6 +128,9 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     _investorUiState.value = UiState.Error("수집된 데이터가 없습니다")
                     return@launch
                 }
+
+                // 최신 데이터 날짜 저장
+                _latestInvestorDataDate.value = stockData.dates.lastOrNull()
 
                 // 3. 투자자별 수급 계산
                 val investorList = calculateInvestorData(stockData)
@@ -94,6 +145,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     exception = e
                 )
                 _stockInfo.value = null
+                _latestInvestorDataDate.value = null
             }
         }
     }
@@ -108,8 +160,9 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
                 _marketUiState.value = UiState.Loading
                 _marketAnalysis.value = ""
+                _latestMarketDataDate.value = null
 
-                // 증시 자금 동향 데이터 수집 (페이지 수 줄임)
+                // 증시 자금 동향 데이터 수집
                 val marketData = repository.getMarketDepositData(numPages)
 
                 android.util.Log.d("AnalysisViewModel", "데이터 수집 결과: ${marketData != null}")
@@ -128,6 +181,9 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
                 android.util.Log.d("AnalysisViewModel", "데이터 개수: ${marketData.dates.size}")
 
+                // 최신 데이터 날짜 저장
+                _latestMarketDataDate.value = marketData.dates.lastOrNull()
+
                 // 분석 수행
                 val analysis = OscillatorCalculator.analyzeMarketDeposit(marketData)
                 _marketAnalysis.value = analysis
@@ -145,6 +201,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                     exception = e
                 )
                 _marketAnalysis.value = ""
+                _latestMarketDataDate.value = null
             }
         }
     }
@@ -156,7 +213,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
         // 최근 5일 평균 계산
         val recentForeign = stockData.foreign5d.takeLast(5).average().toLong()
         val recentInstitution = stockData.institution5d.takeLast(5).average().toLong()
-        val recentIndividual = -(recentForeign + recentInstitution) // 개인 = -(외국인 + 기관)
+        val recentIndividual = -(recentForeign + recentInstitution)
 
         // 추세 판단
         val foreignTrend = when {
@@ -206,6 +263,27 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
+     * 검색 기록에서 항목 선택
+     */
+    fun selectFromHistory(ticker: String, name: String) {
+        analyzeInvestors(name)
+    }
+
+    /**
+     * 검색 기록 삭제
+     */
+    fun removeSearchHistory(ticker: String) {
+        historyRepository.removeSearchHistory(ticker)
+    }
+
+    /**
+     * 모든 검색 기록 삭제
+     */
+    fun clearAllHistory() {
+        historyRepository.clearAllHistory()
+    }
+
+    /**
      * 상태 초기화
      */
     fun reset() {
@@ -213,5 +291,8 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
         _marketUiState.value = UiState.Idle
         _stockInfo.value = null
         _marketAnalysis.value = ""
+        _latestInvestorDataDate.value = null
+        _latestMarketDataDate.value = null
+        _autocompleteSuggestions.value = emptyList()
     }
 }

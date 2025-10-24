@@ -20,6 +20,8 @@ import com.stockoscillator.data.model.TradeSignal
 import com.stockoscillator.data.model.UiState
 import com.stockoscillator.ui.components.MacdChart
 import com.stockoscillator.ui.components.MarketCapOscillatorChart
+import com.stockoscillator.ui.components.SearchHistoryCard
+import com.stockoscillator.ui.components.StockSearchTextField
 import com.stockoscillator.ui.viewmodel.ChartViewModel
 
 @Composable
@@ -37,6 +39,9 @@ fun ChartScreen() {
     val uiState by viewModel.uiState.collectAsState()
     val stockInfo by viewModel.stockInfo.collectAsState()
     val analysisResult by viewModel.analysisResult.collectAsState()
+    val latestDataDate by viewModel.latestDataDate.collectAsState()
+    val searchHistory by viewModel.searchHistory.collectAsState()
+    val autocompleteSuggestions by viewModel.autocompleteSuggestions.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
 
@@ -49,18 +54,49 @@ fun ChartScreen() {
         // 검색 섹션
         SearchSection(
             query = searchQuery,
-            onQueryChange = { searchQuery = it },
+            onQueryChange = { newQuery ->
+                searchQuery = newQuery
+                viewModel.searchAutocomplete(newQuery)
+            },
+            suggestions = autocompleteSuggestions,
+            onSuggestionClick = { ticker, name ->
+                searchQuery = name
+                viewModel.analyzeStock(name)
+            },
             onSearch = { viewModel.analyzeStock(searchQuery) },
             isLoading = uiState is UiState.Loading
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // 검색 기록
+        if (uiState is UiState.Idle && searchHistory.isNotEmpty()) {
+            SearchHistoryCard(
+                history = searchHistory,
+                onItemClick = { ticker, name ->
+                    searchQuery = name
+                    viewModel.selectFromHistory(ticker, name)
+                },
+                onItemDelete = { ticker ->
+                    viewModel.removeSearchHistory(ticker)
+                },
+                onClearAll = {
+                    viewModel.clearAllHistory()
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         // 상태별 UI
         when (val state = uiState) {
             is UiState.Idle -> {
                 InfoCard(
-                    text = "종목명을 입력하고 '차트 분석' 버튼을 눌러주세요"
+                    text = if (searchHistory.isNotEmpty()) {
+                        "종목명을 입력하거나 최근 검색에서 선택하세요"
+                    } else {
+                        "종목명을 입력하고 '차트 분석' 버튼을 눌러주세요"
+                    }
                 )
             }
 
@@ -87,16 +123,20 @@ fun ChartScreen() {
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                // 시가총액 + 수급 오실레이터 복합 차트 (Double Y-Axis)
+                // 시가총액 + 수급 오실레이터 복합 차트
                 MarketCapOscillatorChart(
                     result = result,
-                    marketCap = result.marketCap  // 실제 시가총액 데이터 사용
+                    marketCap = result.marketCap,
+                    latestDate = latestDataDate
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // MACD 차트
-                MacdChart(result = result)
+                MacdChart(
+                    result = result,
+                    latestDate = latestDataDate
+                )
             }
         }
     }
@@ -108,6 +148,8 @@ fun ChartScreen() {
 private fun SearchSection(
     query: String,
     onQueryChange: (String) -> Unit,
+    suggestions: List<Pair<String, String>>,
+    onSuggestionClick: (String, String) -> Unit,
     onSearch: () -> Unit,
     isLoading: Boolean
 ) {
@@ -128,14 +170,15 @@ private fun SearchSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                label = { Text("종목명 입력") },
-                placeholder = { Text("예: 삼성전자") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
+            StockSearchTextField(
+                query = query,
+                onQueryChange = onQueryChange,
+                suggestions = suggestions,
+                onSuggestionClick = onSuggestionClick,
+                onSearch = onSearch,
+                enabled = !isLoading,
+                label = "종목명 입력",
+                placeholder = "예: 삼성전자"
             )
 
             Spacer(modifier = Modifier.height(8.dp))
