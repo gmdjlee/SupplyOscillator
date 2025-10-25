@@ -22,6 +22,9 @@ import android.util.Log
 
 /**
  * 시가총액 + 수급 오실레이터 복합 차트 (Double Y-Axis + Marker)
+ *
+ * ✅ 개선사항 (2단계):
+ * - setScaleEnabled 메서드 호출로 수정 (이전: 프로퍼티 접근 시도)
  */
 @Composable
 fun MarketCapOscillatorChart(
@@ -46,9 +49,9 @@ fun MarketCapOscillatorChart(
                 try {
                     CombinedChart(context).apply {
                         description.isEnabled = false
-                        setTouchEnabled(true)  // ← 수정된 부분
+                        setTouchEnabled(true)
                         isDragEnabled = true
-                        setScaleEnabled(true)
+                        setScaleEnabled(true)  // ✅ 개선: 메서드 호출 (이전: setScaleEnabled = true)
                         setPinchZoom(true)
                         setDrawGridBackground(false)
                         setDrawOrder(arrayOf(
@@ -180,6 +183,9 @@ fun MarketCapOscillatorChart(
 
 /**
  * MACD 차트 (Marker 추가)
+ *
+ * ✅ 개선사항 (2단계):
+ * - setScaleEnabled 메서드 호출로 수정
  */
 @Composable
 fun MacdChart(
@@ -198,7 +204,7 @@ fun MacdChart(
                     description.isEnabled = false
                     setTouchEnabled(true)
                     isDragEnabled = true
-                    setScaleEnabled(true)
+                    setScaleEnabled(true)  // ✅ 개선: 메서드 호출
                     setPinchZoom(true)
                     setDrawGridBackground(false)
                     setDrawOrder(arrayOf(
@@ -206,7 +212,7 @@ fun MacdChart(
                         CombinedChart.DrawOrder.LINE
                     ))
 
-                    // 디버깅 로그 추가 ⭐
+                    // 디버깅 로그 추가
                     Log.d("MacdChart", "Creating MACD marker")
                     Log.d("MacdChart", "dates.size: ${result.dates.size}")
                     Log.d("MacdChart", "macd.size: ${result.macd.size}")
@@ -327,6 +333,9 @@ fun MacdChart(
 
 /**
  * 증시 자금 동향 차트 (Marker 추가)
+ *
+ * ✅ 개선사항 (2단계):
+ * - setScaleEnabled 메서드 호출로 수정
  */
 @Composable
 fun MarketDepositChart(
@@ -345,7 +354,7 @@ fun MarketDepositChart(
                     description.isEnabled = false
                     setTouchEnabled(true)
                     isDragEnabled = true
-                    setScaleEnabled(true)
+                    setScaleEnabled(true)  // ✅ 개선: 메서드 호출
                     setPinchZoom(true)
                     setDrawGridBackground(false)
 

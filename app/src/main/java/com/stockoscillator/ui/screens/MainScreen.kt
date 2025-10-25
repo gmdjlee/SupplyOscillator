@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -27,11 +26,15 @@ import kotlinx.coroutines.launch
  * - NavigationBar (하단 네비게이션)
  * - AppNavigation (화면 전환)
  * - SettingsViewModel 통합 (테마 설정)
+ *
+ * ✅ 개선사항 (1단계):
+ * - 기본 파라미터 제거 (viewModel = viewModel())
+ * - MainActivity에서 전달받은 단일 인스턴스만 사용
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel // ✅ 개선: 기본값 제거, MainActivity에서만 생성
 ) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -146,6 +149,7 @@ fun MainScreen(
         ) { innerPadding ->
             AppNavigation(
                 navController = navController,
+                settingsViewModel = viewModel, // ✅ 개선: ViewModel 전달
                 modifier = Modifier.padding(innerPadding)
             )
         }

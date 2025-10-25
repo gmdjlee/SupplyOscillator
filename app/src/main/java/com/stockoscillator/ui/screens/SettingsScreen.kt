@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.stockoscillator.viewmodel.SettingsViewModel
 
 /**
@@ -21,10 +20,14 @@ import com.stockoscillator.viewmodel.SettingsViewModel
  * - 다크 모드 토글 (실제 적용됨)
  * - 알림 설정
  * - 앱 정보 표시
+ *
+ * ✅ 개선사항 (1단계):
+ * - ViewModel을 파라미터로 받아서 사용 (기본값 제거)
+ * - MainScreen에서 전달받은 단일 인스턴스 활용
  */
 @Composable
 fun SettingsScreen(
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel // ✅ 개선: 파라미터로만 받음 (기본값 제거)
 ) {
     val dynamicColorEnabled by viewModel.dynamicColor.collectAsState()
     val darkModeEnabled by viewModel.darkMode.collectAsState()

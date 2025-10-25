@@ -9,11 +9,8 @@ import com.stockoscillator.data.model.StockData
 import com.stockoscillator.data.model.UiState
 import com.stockoscillator.data.repository.SearchHistoryRepository
 import com.stockoscillator.data.repository.StockRepository
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /**
@@ -28,6 +25,10 @@ data class InvestorData(
 
 /**
  * 수급 분석 ViewModel (검색 기록 + 자동완성 + 날짜 표시)
+ *
+ * ✅ 개선사항 (4단계):
+ * - Flow 기반 자동완성 디바운싱으로 변경
+ * - ChartViewModel과 동일한 패턴 적용
  */
 class AnalysisViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -61,29 +62,46 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
     // 검색 기록
     val searchHistory = historyRepository.searchHistory
 
-    // 자동완성 제안
+    // ✅ 개선: Flow 기반 검색 쿼리
+    private val searchQueryFlow = MutableStateFlow("")
+
+    // ✅ 개선: Flow 연산자로 자동완성 처리
     private val _autocompleteSuggestions = MutableStateFlow<List<Pair<String, String>>>(emptyList())
     val autocompleteSuggestions: StateFlow<List<Pair<String, String>>> = _autocompleteSuggestions.asStateFlow()
 
-    private var autocompleteJob: Job? = null
+    init {
+        // ✅ 개선: Flow 기반 자동완성 처리
+        viewModelScope.launch {
+            searchQueryFlow
+                .debounce(300) // 300ms 디바운싱
+                .filter { it.isNotEmpty() } // 빈 문자열 필터링
+                .distinctUntilChanged() // 중복 쿼리 제거
+                .mapLatest { query ->
+                    // 백그라운드 스레드에서 검색 실행
+                    repository.searchStocksForAutocomplete(query)
+                }
+                .catch { exception ->
+                    // 에러 발생 시 빈 리스트 반환
+                    android.util.Log.e("AnalysisViewModel", "자동완성 검색 실패", exception)
+                    emit(emptyList())
+                }
+                .collect { suggestions ->
+                    _autocompleteSuggestions.value = suggestions
+                }
+        }
+    }
 
     /**
      * 자동완성 검색
+     *
+     * ✅ 개선: Flow에 쿼리만 전달 (디바운싱은 Flow가 처리)
      */
     fun searchAutocomplete(query: String) {
-        // 이전 작업 취소
-        autocompleteJob?.cancel()
-
         if (query.isEmpty()) {
             _autocompleteSuggestions.value = emptyList()
-            return
-        }
-
-        // 디바운싱: 300ms 후에 검색
-        autocompleteJob = viewModelScope.launch {
-            delay(300)
-            val suggestions = repository.searchStocksForAutocomplete(query)
-            _autocompleteSuggestions.value = suggestions
+            searchQueryFlow.value = ""
+        } else {
+            searchQueryFlow.value = query
         }
     }
 
@@ -98,8 +116,9 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
 
         // 자동완성 제안 초기화
         _autocompleteSuggestions.value = emptyList()
+        searchQueryFlow.value = ""
 
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 _investorUiState.value = UiState.Loading
                 _stockInfo.value = null
@@ -139,6 +158,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
                 _investorUiState.value = UiState.Success(investorList)
 
             } catch (e: Exception) {
+                android.util.Log.e("AnalysisViewModel", "분석 중 오류", e)
                 e.printStackTrace()
                 _investorUiState.value = UiState.Error(
                     message = "분석 중 오류가 발생했습니다: ${e.message}",
@@ -154,7 +174,7 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
      * 증시 자금 동향 분석
      */
     fun analyzeMarket(numPages: Int = 3) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 android.util.Log.d("AnalysisViewModel", "증시 자금 동향 분석 시작")
 
@@ -294,5 +314,12 @@ class AnalysisViewModel(application: Application) : AndroidViewModel(application
         _latestInvestorDataDate.value = null
         _latestMarketDataDate.value = null
         _autocompleteSuggestions.value = emptyList()
+        searchQueryFlow.value = ""
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Flow는 자동으로 취소되므로 별도 정리 불필요
+        android.util.Log.d("AnalysisViewModel", "ViewModel cleared")
     }
 }
