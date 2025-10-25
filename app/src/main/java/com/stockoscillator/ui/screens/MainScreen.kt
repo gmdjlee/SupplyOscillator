@@ -6,18 +6,33 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.stockoscillator.navigation.AppNavigation
 import com.stockoscillator.navigation.Screen
+import com.stockoscillator.viewmodel.SettingsViewModel
 import kotlinx.coroutines.launch
 
+/**
+ * 메인 스크린
+ *
+ * 앱의 전체 UI 구조를 담당:
+ * - TopAppBar (상단 바 + 햄버거 메뉴)
+ * - ModalNavigationDrawer (서랍 메뉴)
+ * - NavigationBar (하단 네비게이션)
+ * - AppNavigation (화면 전환)
+ * - SettingsViewModel 통합 (테마 설정)
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    viewModel: SettingsViewModel = viewModel()
+) {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()

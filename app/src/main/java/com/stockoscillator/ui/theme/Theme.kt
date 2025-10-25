@@ -10,98 +10,108 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 /**
- * 다크 테마 색상 스킴 (민트 그린 톤)
- */
-private val DarkColorScheme = darkColorScheme(
-    primary = DarkMintGreen60,
-    onPrimary = Color(0xFF003300),
-    primaryContainer = DarkMintGreen30,
-    onPrimaryContainer = DarkMintGreen80,
-
-    secondary = TealAccent60,
-    onSecondary = Color(0xFF003D33),
-    secondaryContainer = TealAccent40,
-    onSecondaryContainer = TealAccent80,
-
-    tertiary = MintGreen50,
-    onTertiary = Color(0xFF002200),
-    tertiaryContainer = MintGreen30,
-    onTertiaryContainer = MintGreen80,
-
-    error = ErrorRed40,
-    onError = Color(0xFF690005),
-    errorContainer = Color(0xFF93000A),
-    onErrorContainer = ErrorRed80,
-
-    background = BackgroundDark,
-    onBackground = Color(0xFFE6E6E6),
-    surface = SurfaceDark,
-    onSurface = Color(0xFFE6E6E6),
-    surfaceVariant = Color(0xFF3D3D3D),
-    onSurfaceVariant = Color(0xFFC8C8C8),
-
-    outline = NeutralGray60,
-    outlineVariant = NeutralGray80
-)
-
-/**
- * 라이트 테마 색상 스킴 (민트 그린 톤)
+ * 라이트 모드 색상 스킴
  */
 private val LightColorScheme = lightColorScheme(
-    primary = MintGreen60,
-    onPrimary = Color.White,
-    primaryContainer = MintGreen10,
-    onPrimaryContainer = MintGreen90,
-
-    secondary = TealAccent60,
-    onSecondary = Color.White,
-    secondaryContainer = TealAccent10,
-    onSecondaryContainer = TealAccent80,
-
-    tertiary = MintGreen50,
-    onTertiary = Color.White,
-    tertiaryContainer = MintGreen20,
-    onTertiaryContainer = MintGreen80,
-
-    error = ErrorRed40,
-    onError = Color.White,
-    errorContainer = ErrorRed80,
-    onErrorContainer = Color(0xFF410002),
-
-    background = BackgroundLight,
-    onBackground = Color(0xFF1C1B1F),
-    surface = SurfaceLight,
-    onSurface = Color(0xFF1C1B1F),
-    surfaceVariant = NeutralGray10,
-    onSurfaceVariant = NeutralGray80,
-
-    outline = NeutralGray60,
-    outlineVariant = NeutralGray30
+    primary = md_theme_light_primary,
+    onPrimary = md_theme_light_onPrimary,
+    primaryContainer = md_theme_light_primaryContainer,
+    onPrimaryContainer = md_theme_light_onPrimaryContainer,
+    secondary = md_theme_light_secondary,
+    onSecondary = md_theme_light_onSecondary,
+    secondaryContainer = md_theme_light_secondaryContainer,
+    onSecondaryContainer = md_theme_light_onSecondaryContainer,
+    tertiary = md_theme_light_tertiary,
+    onTertiary = md_theme_light_onTertiary,
+    tertiaryContainer = md_theme_light_tertiaryContainer,
+    onTertiaryContainer = md_theme_light_onTertiaryContainer,
+    error = md_theme_light_error,
+    errorContainer = md_theme_light_errorContainer,
+    onError = md_theme_light_onError,
+    onErrorContainer = md_theme_light_onErrorContainer,
+    background = md_theme_light_background,
+    onBackground = md_theme_light_onBackground,
+    surface = md_theme_light_surface,
+    onSurface = md_theme_light_onSurface,
+    surfaceVariant = md_theme_light_surfaceVariant,
+    onSurfaceVariant = md_theme_light_onSurfaceVariant,
+    outline = md_theme_light_outline,
+    inverseOnSurface = md_theme_light_inverseOnSurface,
+    inverseSurface = md_theme_light_inverseSurface,
+    inversePrimary = md_theme_light_inversePrimary,
+    surfaceTint = md_theme_light_surfaceTint,
+    outlineVariant = md_theme_light_outlineVariant,
+    scrim = md_theme_light_scrim,
 )
 
+/**
+ * 다크 모드 색상 스킴
+ */
+private val DarkColorScheme = darkColorScheme(
+    primary = md_theme_dark_primary,
+    onPrimary = md_theme_dark_onPrimary,
+    primaryContainer = md_theme_dark_primaryContainer,
+    onPrimaryContainer = md_theme_dark_onPrimaryContainer,
+    secondary = md_theme_dark_secondary,
+    onSecondary = md_theme_dark_onSecondary,
+    secondaryContainer = md_theme_dark_secondaryContainer,
+    onSecondaryContainer = md_theme_dark_onSecondaryContainer,
+    tertiary = md_theme_dark_tertiary,
+    onTertiary = md_theme_dark_onTertiary,
+    tertiaryContainer = md_theme_dark_tertiaryContainer,
+    onTertiaryContainer = md_theme_dark_onTertiaryContainer,
+    error = md_theme_dark_error,
+    errorContainer = md_theme_dark_errorContainer,
+    onError = md_theme_dark_onError,
+    onErrorContainer = md_theme_dark_onErrorContainer,
+    background = md_theme_dark_background,
+    onBackground = md_theme_dark_onBackground,
+    surface = md_theme_dark_surface,
+    onSurface = md_theme_dark_onSurface,
+    surfaceVariant = md_theme_dark_surfaceVariant,
+    onSurfaceVariant = md_theme_dark_onSurfaceVariant,
+    outline = md_theme_dark_outline,
+    inverseOnSurface = md_theme_dark_inverseOnSurface,
+    inverseSurface = md_theme_dark_inverseSurface,
+    inversePrimary = md_theme_dark_inversePrimary,
+    surfaceTint = md_theme_dark_surfaceTint,
+    outlineVariant = md_theme_dark_outlineVariant,
+    scrim = md_theme_dark_scrim,
+)
+
+/**
+ * 앱 테마
+ *
+ * @param darkTheme 다크 테마 사용 여부 (설정에서 제어)
+ * @param dynamicColor 동적 색상 사용 여부 (설정에서 제어, Android 12+ 전용)
+ * @param content 테마가 적용될 컴포저블 콘텐츠
+ */
 @Composable
 fun StockOscillatorTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // 민트 톤을 유지하기 위해 기본값을 false로 변경
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    // 색상 스킴 결정
     val colorScheme = when {
+        // 동적 색상 사용 (Android 12 이상)
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
+        // 다크 테마
         darkTheme -> DarkColorScheme
+        // 라이트 테마
         else -> LightColorScheme
     }
 
+    // 시스템 UI (상태바, 네비게이션바) 색상 설정
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -109,15 +119,6 @@ fun StockOscillatorTheme(
             window.statusBarColor = colorScheme.primary.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
-    }
-
-    // System UI Controller for edge-to-edge
-    val systemUiController = rememberSystemUiController()
-    SideEffect {
-        systemUiController.setSystemBarsColor(
-            color = Color.Transparent,
-            darkIcons = !darkTheme
-        )
     }
 
     MaterialTheme(

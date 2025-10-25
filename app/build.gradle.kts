@@ -84,6 +84,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
 
+    // DataStore (설정 저장용) ⭐ 추가
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // CardView for marker layouts
     implementation("androidx.cardview:cardview:1.0.0")
 
