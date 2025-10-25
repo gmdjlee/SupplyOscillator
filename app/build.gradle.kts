@@ -63,6 +63,14 @@ chaquopy {
 }
 
 dependencies {
+    val composeBom = platform("androidx.compose:compose-bom:2025.10.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+
+    // Android Studio Preview support
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    debugImplementation("androidx.compose.ui:ui-tooling")
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
