@@ -206,10 +206,20 @@ fun MacdChart(
                         CombinedChart.DrawOrder.LINE
                     ))
 
+                    // 디버깅 로그 추가 ⭐
+                    Log.d("MacdChart", "Creating MACD marker")
+                    Log.d("MacdChart", "dates.size: ${result.dates.size}")
+                    Log.d("MacdChart", "macd.size: ${result.macd.size}")
+                    Log.d("MacdChart", "signal.size: ${result.signal.size}")
+                    if (result.macd.isNotEmpty()) {
+                        Log.d("MacdChart", "macd first 5: ${result.macd.take(5)}")
+                        Log.d("MacdChart", "signal first 5: ${result.signal.take(5)}")
+                    }
+
                     // MACD 전용 마커 뷰
                     val markerView = MacdMarkerView(
                         context,
-                        R.layout.marker_view_macd,
+                        R.layout.marker_view,
                         result.dates,
                         result.macd,
                         result.signal
